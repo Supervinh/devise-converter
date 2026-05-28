@@ -38,10 +38,11 @@ export function useExchangeRate() {
         updatedAt: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
       });
     } catch (e: any) {
+      console.error('[useExchangeRate] fetch error:', e);
       setState(prev => ({
         ...prev,
         loading: false,
-        error: 'Impossible de récupérer le taux. Vérifiez votre connexion.',
+        error: `Erreur : ${e?.message ?? e}`,
       }));
     }
   }, []);
