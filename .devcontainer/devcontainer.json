@@ -1,0 +1,23 @@
+{
+  "name": "devise-converter",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+
+  "forwardPorts": [8081, 19000, 19006],
+  "portsAttributes": {
+    "8081": { "label": "Metro Bundler" },
+    "19000": { "label": "Expo DevTools" },
+    "19006": { "label": "Expo Web" }
+  },
+
+  "postCreateCommand": "npm install",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "msjsdiag.vscode-react-native"
+      ]
+    }
+  }
+}
