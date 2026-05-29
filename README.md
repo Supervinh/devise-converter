@@ -94,3 +94,10 @@ eas build --platform ios
 # Build Android (Google Play)
 eas build --platform android
 ```
+
+
+## Pour tester dans codespace
+
+```bash
+npx expo start --web
+```

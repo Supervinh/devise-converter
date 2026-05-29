@@ -25,7 +25,7 @@ export function useExchangeRate() {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const res = await fetch(`https://api.frankfurter.app/latest?from=${from}&to=${to}`);
+      const res = await fetch(`https://api.frankfurter.dev/v1/latest?from=${from}&to=${to}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const rate = data.rates[to];
