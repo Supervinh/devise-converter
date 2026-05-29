@@ -15,20 +15,22 @@ import { CURRENCIES, Currency } from '../constants/currencies';
 type Props = {
   visible: boolean;
   selected: string;
+  exclude?: string[];
   onSelect: (code: string) => void;
   onClose: () => void;
 };
 
-export default function CurrencyPicker({ visible, selected, onSelect, onClose }: Props) {
+export default function CurrencyPicker({ visible, selected, exclude = [], onSelect, onClose }: Props) {
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    if (!q) return CURRENCIES;
-    return CURRENCIES.filter(
+    const base = exclude.length > 0 ? CURRENCIES.filter(c => !exclude.includes(c.code)) : CURRENCIES;
+    if (!q) return base;
+    return base.filter(
       c => c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)
     );
-  }, [search]);
+  }, [search, exclude]);
 
   const handleSelect = (code: string) => {
     onSelect(code);

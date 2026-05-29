@@ -18,6 +18,7 @@ import CurrencyPicker from '../components/CurrencyPicker';
 import { CURRENCIES } from '../constants/currencies';
 
 const QUICK_AMOUNTS = [10, 50, 100, 500, 1000];
+const MAX_CURRENCIES = 10;
 
 function getCurrency(code: string) {
   return CURRENCIES.find(c => c.code === code) ?? CURRENCIES[0];
@@ -25,19 +26,18 @@ function getCurrency(code: string) {
 
 export default function ConverterScreen() {
   const [fromCode, setFromCode] = useState('EUR');
-  const [toCode, setToCode] = useState('USD');
+  const [toCodes, setToCodes] = useState<string[]>(['USD', 'GBP', 'JPY']);
   const [amount, setAmount] = useState('1');
-  const [pickerTarget, setPickerTarget] = useState<'from' | 'to' | null>(null);
+  const [pickerTarget, setPickerTarget] = useState<'from' | 'add' | number | null>(null);
 
-  const { rate, loading, error, updatedAt, fetchRate, convert } = useExchangeRate();
+  const { rates, loading, error, updatedAt, source, fetchRates, convert } = useExchangeRate();
 
   const spinAnim = useRef(new Animated.Value(0)).current;
-  const swapScale = useRef(new Animated.Value(1)).current;
   const resultOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    fetchRate(fromCode, toCode);
-  }, [fromCode, toCode]);
+    fetchRates(fromCode, toCodes);
+  }, [fromCode, toCodes, fetchRates]);
 
   useEffect(() => {
     if (loading) {
@@ -54,24 +54,53 @@ export default function ConverterScreen() {
 
   const spin = spinAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
-  const handleSwap = () => {
-    if (Platform.OS !== 'web') Vibration.vibrate(30);
-    Animated.sequence([
-      Animated.timing(swapScale, { toValue: 0.85, duration: 100, useNativeDriver: true }),
-      Animated.timing(swapScale, { toValue: 1, duration: 150, useNativeDriver: true }),
-    ]).start();
-    setFromCode(toCode);
-    setToCode(fromCode);
+  const addCurrency = (code: string) => {
+    if (toCodes.length >= MAX_CURRENCIES || toCodes.includes(code) || code === fromCode) return;
+    setToCodes(prev => [...prev, code]);
+  };
+
+  const removeCurrency = (code: string) => {
+    setToCodes(prev => prev.filter(c => c !== code));
+  };
+
+  const replaceCurrency = (index: number, code: string) => {
+    setToCodes(prev => {
+      const next = [...prev];
+      next[index] = code;
+      return next;
+    });
+  };
+
+  const handlePickerSelect = (code: string) => {
+    if (pickerTarget === 'from') {
+      setFromCode(code);
+      setToCodes(prev => prev.filter(c => c !== code));
+    } else if (pickerTarget === 'add') {
+      addCurrency(code);
+    } else if (typeof pickerTarget === 'number') {
+      replaceCurrency(pickerTarget, code);
+    }
+    setPickerTarget(null);
   };
 
   const numericAmount = parseFloat(amount) || 0;
   const from = getCurrency(fromCode);
-  const to = getCurrency(toCode);
 
-  const rateLabel =
-    rate !== null
-      ? `1 ${fromCode} = ${rate.toLocaleString('fr-FR', { maximumFractionDigits: 4 })} ${toCode}`
-      : '—';
+  const sourceLabel =
+    source === 'cache' ? 'EN CACHE' :
+    source === 'stale-cache' ? 'HORS LIGNE' :
+    'EN DIRECT';
+
+  const pickerExclude =
+    pickerTarget === 'from' ? [] :
+    pickerTarget === 'add' ? [fromCode, ...toCodes] :
+    typeof pickerTarget === 'number' ? [fromCode, ...toCodes.filter((_, i) => i !== pickerTarget)] :
+    [];
+
+  const pickerSelected =
+    pickerTarget === 'from' ? fromCode :
+    typeof pickerTarget === 'number' ? toCodes[pickerTarget] :
+    '';
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -89,19 +118,20 @@ export default function ConverterScreen() {
           <Text style={styles.headerTitle}>Converter</Text>
         </View>
 
-        {/* Rate Badge */}
+        {/* Status Badge */}
         <View style={styles.rateBadge}>
           <View>
-            <Text style={styles.rateLabel}>TAUX EN DIRECT</Text>
+            <Text style={styles.rateLabel}>{sourceLabel}</Text>
             {loading ? (
               <ActivityIndicator size="small" color="#6c63ff" style={{ marginTop: 4 }} />
             ) : (
-              <Text style={styles.rateValue}>{rateLabel}</Text>
+              <Text style={styles.rateValue}>
+                {updatedAt ? `Mis à jour à ${updatedAt}` : '—'}
+              </Text>
             )}
           </View>
           <View style={styles.rateRight}>
-            {updatedAt && <Text style={styles.rateTime}>{updatedAt}</Text>}
-            <TouchableOpacity onPress={() => fetchRate(fromCode, toCode)} style={styles.refreshBtn}>
+            <TouchableOpacity onPress={() => fetchRates(fromCode, toCodes, true)} style={styles.refreshBtn}>
               <Animated.Text style={[styles.refreshIcon, { transform: [{ rotate: spin }] }]}>↻</Animated.Text>
             </TouchableOpacity>
           </View>
@@ -141,35 +171,6 @@ export default function ConverterScreen() {
           </View>
         </View>
 
-        {/* Swap Button */}
-        <Animated.View style={[styles.swapWrapper, { transform: [{ scale: swapScale }] }]}>
-          <TouchableOpacity style={styles.swapBtn} onPress={handleSwap} activeOpacity={0.8}>
-            <Text style={styles.swapIcon}>⇅</Text>
-            <Text style={styles.swapText}>Inverser les devises</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* To Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>J'OBTIENS</Text>
-          <View style={styles.currencyRow}>
-            <TouchableOpacity
-              style={styles.currencyBtn}
-              onPress={() => setPickerTarget('to')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.flagCircle}>
-                <Text style={styles.flagText}>{to.flag}</Text>
-              </View>
-              <Text style={styles.currencyCode}>{toCode}</Text>
-              <Text style={styles.chevron}>›</Text>
-            </TouchableOpacity>
-            <Animated.Text style={[styles.resultText, { opacity: resultOpacity }]}>
-              {convert(numericAmount, toCode)}
-            </Animated.Text>
-          </View>
-        </View>
-
         {/* Quick Amounts */}
         <Text style={styles.quickLabel}>MONTANTS RAPIDES</Text>
         <ScrollView
@@ -188,16 +189,67 @@ export default function ConverterScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Results */}
+        <Text style={[styles.quickLabel, { marginTop: 16 }]}>J'OBTIENS</Text>
+        <View style={styles.resultsList}>
+          {toCodes.map((code, index) => {
+            const currency = getCurrency(code);
+            return (
+              <Animated.View key={code} style={[styles.resultRow, { opacity: resultOpacity }]}>
+                <TouchableOpacity
+                  style={styles.resultCurrencyBtn}
+                  onPress={() => setPickerTarget(index)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.flagCircle}>
+                    <Text style={styles.flagText}>{currency.flag}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.currencyCode}>{code}</Text>
+                    <Text style={styles.currencyName}>{currency.name}</Text>
+                  </View>
+                  <Text style={styles.chevron}>›</Text>
+                </TouchableOpacity>
+                <Text style={styles.resultAmount} numberOfLines={1} adjustsFontSizeToFit>
+                  {convert(numericAmount, code)}
+                </Text>
+                {toCodes.length > 1 && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (Platform.OS !== 'web') Vibration.vibrate(20);
+                      removeCurrency(code);
+                    }}
+                    style={styles.removeBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.removeBtnText}>✕</Text>
+                  </TouchableOpacity>
+                )}
+              </Animated.View>
+            );
+          })}
+        </View>
+
+        {/* Add Currency Button */}
+        {toCodes.length < MAX_CURRENCIES && (
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={() => setPickerTarget('add')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.addBtnIcon}>+</Text>
+            <Text style={styles.addBtnText}>Ajouter une devise</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       {/* Currency Picker Modal */}
       <CurrencyPicker
         visible={pickerTarget !== null}
-        selected={pickerTarget === 'from' ? fromCode : toCode}
-        onSelect={(code) => {
-          if (pickerTarget === 'from') setFromCode(code);
-          else setToCode(code);
-        }}
+        selected={pickerSelected}
+        exclude={pickerExclude}
+        onSelect={handlePickerSelect}
         onClose={() => setPickerTarget(null)}
       />
     </SafeAreaView>
@@ -236,7 +288,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
 
-  // Rate Badge
+  // Status Badge
   rateBadge: {
     marginHorizontal: 28,
     marginBottom: 20,
@@ -264,12 +316,6 @@ const styles = StyleSheet.create({
   },
   rateRight: {
     alignItems: 'flex-end',
-    gap: 4,
-  },
-  rateTime: {
-    fontSize: 10,
-    color: '#3a3a58',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   refreshBtn: {
     width: 30,
@@ -301,7 +347,7 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
 
-  // Cards
+  // From Card
   card: {
     marginHorizontal: 28,
     marginBottom: 14,
@@ -345,6 +391,11 @@ const styles = StyleSheet.create({
     color: '#e8e8f5',
     letterSpacing: 0.5,
   },
+  currencyName: {
+    fontSize: 11,
+    color: '#555570',
+    marginTop: 1,
+  },
   chevron: {
     fontSize: 18,
     color: '#555570',
@@ -357,41 +408,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#e8e8f5',
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-  resultText: {
-    flex: 1,
-    textAlign: 'right',
-    fontSize: 28,
-    fontWeight: '500',
-    color: '#6c63ff',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-
-  // Swap
-  swapWrapper: {
-    marginHorizontal: 28,
-    marginBottom: 14,
-  },
-  swapBtn: {
-    backgroundColor: '#1e1e35',
-    borderWidth: 0.5,
-    borderColor: '#2a2a45',
-    borderRadius: 14,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  swapIcon: {
-    fontSize: 18,
-    color: '#6c63ff',
-  },
-  swapText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6c63ff',
-    letterSpacing: 0.3,
   },
 
   // Quick amounts
@@ -420,5 +436,74 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#9898b8',
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+
+  // Results list
+  resultsList: {
+    marginHorizontal: 28,
+    backgroundColor: '#16162a',
+    borderWidth: 0.5,
+    borderColor: '#2a2a45',
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  resultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#1e1e35',
+    gap: 8,
+  },
+  resultCurrencyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  resultAmount: {
+    flex: 1,
+    textAlign: 'right',
+    fontSize: 22,
+    fontWeight: '500',
+    color: '#6c63ff',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  removeBtn: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
+  },
+  removeBtnText: {
+    fontSize: 12,
+    color: '#3a3a58',
+  },
+
+  // Add button
+  addBtn: {
+    marginHorizontal: 28,
+    marginTop: 10,
+    backgroundColor: '#16162a',
+    borderWidth: 0.5,
+    borderColor: '#2a2a45',
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  addBtnIcon: {
+    fontSize: 18,
+    color: '#6c63ff',
+    lineHeight: 20,
+  },
+  addBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6c63ff',
+    letterSpacing: 0.3,
   },
 });
