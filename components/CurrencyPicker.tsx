@@ -11,6 +11,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { CURRENCIES, Currency } from '../constants/currencies';
+import { useTheme, Theme } from '../constants/theme';
 
 type Props = {
   visible: boolean;
@@ -21,6 +22,8 @@ type Props = {
 };
 
 export default function CurrencyPicker({ visible, selected, exclude = [], onSelect, onClose }: Props) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
@@ -41,7 +44,7 @@ export default function CurrencyPicker({ visible, selected, exclude = [], onSele
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle={theme.statusBar} />
 
         {/* Header */}
         <View style={styles.header}>
@@ -56,7 +59,7 @@ export default function CurrencyPicker({ visible, selected, exclude = [], onSele
           <TextInput
             style={styles.searchInput}
             placeholder="Rechercher (EUR, Dollar...)"
-            placeholderTextColor="#555570"
+            placeholderTextColor={theme.textDim}
             value={search}
             onChangeText={setSearch}
             autoCorrect={false}
@@ -92,10 +95,10 @@ export default function CurrencyPicker({ visible, selected, exclude = [], onSele
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (t: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f1a',
+    backgroundColor: t.bg,
   },
   header: {
     flexDirection: 'row',
@@ -105,36 +108,36 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 16,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#2a2a45',
+    borderBottomColor: t.border,
   },
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#e8e8f5',
+    color: t.text,
     letterSpacing: -0.3,
   },
   closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#16162a',
+    backgroundColor: t.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeText: {
-    color: '#9898b8',
+    color: t.textMuted,
     fontSize: 14,
   },
   searchWrapper: {
     margin: 16,
     borderRadius: 12,
-    backgroundColor: '#16162a',
+    backgroundColor: t.surface,
     borderWidth: 0.5,
-    borderColor: '#2a2a45',
+    borderColor: t.border,
   },
   searchInput: {
     padding: 14,
-    color: '#e8e8f5',
+    color: t.text,
     fontSize: 15,
     fontFamily: 'System',
   },
@@ -145,7 +148,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   itemSelected: {
-    backgroundColor: '#16162a',
+    backgroundColor: t.surfaceActive,
   },
   itemFlag: {
     fontSize: 24,
@@ -157,22 +160,22 @@ const styles = StyleSheet.create({
   itemCode: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#e8e8f5',
+    color: t.text,
     letterSpacing: 0.5,
   },
   itemName: {
     fontSize: 12,
-    color: '#555570',
+    color: t.textDim,
     marginTop: 2,
   },
   checkmark: {
-    color: '#6c63ff',
+    color: t.primary,
     fontSize: 16,
     fontWeight: '600',
   },
   separator: {
     height: 0.5,
-    backgroundColor: '#1e1e30',
+    backgroundColor: t.borderSubtle,
     marginLeft: 62,
   },
 });

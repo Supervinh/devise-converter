@@ -98,11 +98,13 @@ export function useExchangeRate() {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const res = await fetch(
-        `https://api.frankfurter.dev/v1/latest?from=${from}&to=${unique.join(',')}`
-      );
+      // open.er-api.com : gratuit, sans clé, ~160 devises
+      const res = await fetch(`https://open.er-api.com/v6/latest/${from}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      if (data?.result !== 'success' || !data.rates) {
+        throw new Error(data?.['error-type'] ?? 'Réponse API invalide');
+      }
 
       if (currentKeyRef.current !== requestKey) return;
 
@@ -110,7 +112,7 @@ export function useExchangeRate() {
       const fetchedRates: Record<string, number> = {};
       for (const to of unique) {
         const r = data.rates[to];
-        if (r) {
+        if (typeof r === 'number') {
           fetchedRates[to] = r;
           await writeCache(from, to, r, now);
         }
