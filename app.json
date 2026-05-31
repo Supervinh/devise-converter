@@ -4,7 +4,6 @@
     "slug": "currency-converter",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
       "backgroundColor": "#0a0a0f"
@@ -18,7 +17,6 @@
         "backgroundColor": "#0a0a0f"
       },
       "package": "com.yourname.currencyconverter"
-    },
-    "plugins": ["expo-font"]
+    }
   }
 }
