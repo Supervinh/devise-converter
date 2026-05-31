@@ -2,7 +2,7 @@
   "expo": {
     "name": "Converter",
     "slug": "currency-converter",
-    "version": "1.0.0",
+    "version": "2.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "splash": {
@@ -16,7 +16,8 @@
       "adaptiveIcon": {
         "backgroundColor": "#0a0a0f"
       },
-      "package": "com.yourname.currencyconverter"
+      "package": "com.yourname.currencyconverter",
+      "versionCode": 20100
     }
   }
 }
