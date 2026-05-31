@@ -14,7 +14,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "node scripts/sync-app-version.js ${nextRelease.version} && eas build --local --non-interactive --platform android --profile production --output ./build/converter-${nextRelease.version}.apk"
+        "prepareCmd": "node scripts/sync-app-version.js ${nextRelease.version} && bash scripts/build-apk.sh ${nextRelease.version}"
       }
     ],
     [

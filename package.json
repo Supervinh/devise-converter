@@ -7,7 +7,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build:apk": "eas build --local --non-interactive --platform android --profile production --output ./build/converter.apk"
+    "build:apk": "bash scripts/build-apk.sh local"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",
