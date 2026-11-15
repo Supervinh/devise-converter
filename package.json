@@ -1,6 +1,6 @@
 {
   "name": "currency-converter",
-  "version": "2.1.1",
+  "version": "2.1.2-develop.1",
   "main": "index.tsx",
   "scripts": {
     "start": "expo start",

@@ -1,3 +1,9 @@
+## [2.1.2-develop.1](https://github.com/Supervinh/devise-converter/compare/v2.1.1...v2.1.2-develop.1) (2026-11-15)
+
+### :bug: Bug Fixes
+
+* update release workflow to include develop branch and upgrade JDK to version 25 ([b7821a8](https://github.com/Supervinh/devise-converter/commit/b7821a83284b56ef7f9b5a60e854d3d8110a9dc4))
+
 ## [2.1.1](https://github.com/Supervinh/devise-converter/compare/v2.1.0...v2.1.1) (2026-11-15)
 
 
